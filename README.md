@@ -7,14 +7,35 @@ This Repo is a guide to setting up a Data Platform in Ubuntu using Open Source S
 ## Out of Scope - TLS/HTTPS
 Setting up using TLS and certificates adds a massive complexity to the install however it is possible. Generally you need to get some certificates made up for your server, put them someone safe in your home drive, then mount them to various locations on each application using -v /directory:/app/cert/dir and usually an -e TLSOPTION=true type environment variable. Also included a prepare_certs.py, this enables the requests package in python to use your custom certificates. Just run it in the custom dockerfiles you make with the certs.
 
-
 ## Docker Modern Data stack
 ## Data Platform
 Most of the content below are direct commands to run in the linux terminal. Just check each one before you run them in case there are passwords to enter or something. Also where ever you see `localhost`, usually I mean to use your VMs address. E.G. `192.168.1.X` or `yourvmdomain.com`
 
+apt-get install qemu-guest-agent
+
+
 Make your life easier:
 ```
 sudo sudo su
+```
+
+### Check disk size
+View size of Drives
+df
+May need to do:
+`sudo parted /dev/sda`
+`print`
+`resizepart 3 100%`
+`quit`
+
+#Increase the Physical Volume (pv) to max size
+#Expand the Logical Volume (LV) to max size to match
+#Expand the filesystem itself
+```
+sudo pvresize /dev/sda3
+sudo lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+sudo lvresize -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv
+sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
 ```
 ### Installing Docker
 ```
@@ -22,14 +43,17 @@ for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker c
 ```
 #### Add Docker's Repo
 ```
+# Add Docker's official GPG key:
 sudo apt-get update
 sudo apt-get install ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
 sudo chmod a+r /etc/apt/keyrings/docker.asc
-echo
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" |
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt-get update
 ```
@@ -161,7 +185,7 @@ docker run -d --name postgres-warehouse -e POSTGRES_USER=<username> -e POSTGRES_
 
 #### Install pgadmin
 ```
-docker run -d --name pgadmin -e 'PGADMIN_DEFAULT_EMAIL=<emailaddress>' -e 'PGADMIN_DEFAULT_PASSWORD=<password>' -e 'PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION=True' -e 'PGADMIN_CONFIG_LOGIN_BANNER="Authorised users only!"' -e 'PGADMIN_CONFIG_CONSOLE_LOG_LEVEL=10' -v pgadmin_data:/var/lib/pgadmin -p 31280:80 dpage/pgadmin4:8.7
+docker run -d --name pgadmin -e 'PGADMIN_DEFAULT_EMAIL=<emailaddress>' -e 'PGADMIN_DEFAULT_PASSWORD=<password>' -e 'PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION=True' -e 'PGADMIN_CONFIG_LOGIN_BANNER="Authorised users only!"' -e 'PGADMIN_CONFIG_CONSOLE_LOG_LEVEL=10' -v pgadmin_data:/var/lib/pgadmin -p 31280:80 dpage/pgadmin4:8.12.0
 ```
 
 Login at http://localhost:31280, usually takes a minute to boot. 
@@ -199,7 +223,7 @@ git clone https://github.com/lightdash/lightdash
 cd lightdash
 export LIGHTDASH_SECRET="your-secret"
 export PGPASSWORD="your-db-password"
-docker-compose -f docker-compose.yml --env-file .env up --detach --remove-orphans
+docker compose -f docker-compose.yml --env-file .env up --detach --remove-orphans
 ```
 
 
@@ -214,6 +238,7 @@ docker compose up -d
 login to grafana with admin/admin
 Change password.
 Add the promethus server as a data source.
+`http://localhost:9090`
 Add the monitoring jsons as dashboards, ensuring the data source is selected.
 
 ### Updating docker images
@@ -230,12 +255,12 @@ docker run -d --name watchtower -v /var/run/docker.sock:/var/run/docker.sock con
 ### MLFlow
 #### Tracking Server Database
 ```
-docker run -d --name mlflow-db -e POSTGRES_USER=<user> -e POSTGRES_PASSWORD=<password> -e POSTGRES_DB=mlflowdb -e PGDATA=/var/lib/postgresql/data/pgdata -v mlflow_data:/var/lib/postgresql/data -p 31251:5432 postgres:17.0
+docker run -d --name mlflow-db -e POSTGRES_USER=<user> -e POSTGRES_PASSWORD=<password> -e POSTGRES_DB=mlflowdb -e PGDATA=/var/lib/postgresql/data/pgdata -v mlflow_data:/var/lib/postgresql/data -p 31252:5432 postgres:17.0
 ```
 
 #### Tracking Server Database
 ```
-docker run -d --name mlflow -p 5002:5000 -e MLFLOW_S3_ENDPOINT_URL=http://localhost:9000 -e AWS_ACCESS_KEY_ID=<create in minio> -e AWS_SECRET_ACCESS_KEY=<create in minio> --entrypoint /bin/sh ghcr.io/mlflow/mlflow -c "pip install psycopg2-binary boto3 && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri postgresql://<user>:<password>@localhost:31251/mlflowdb --artifacts-destination s3://mlartifacts"
+docker run -d --name mlflow -p 5002:5000 -e MLFLOW_S3_ENDPOINT_URL=http://localhost:9000 -e AWS_ACCESS_KEY_ID=<create in minio> -e AWS_SECRET_ACCESS_KEY=<create in minio> --entrypoint /bin/sh ghcr.io/mlflow/mlflow -c "pip install psycopg2-binary boto3 && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri postgresql://<user>:<password>@localhost:31252/mlflowdb --artifacts-destination s3://mlartifacts"
 ```
 #### Connecting to Tracking Server
 See the mlflow.ipynb
@@ -245,9 +270,13 @@ Similar to the tracking database but you will need to create a dockerfile, selec
 
 
 ## AI / Retrieval Augmented Generation (RAG)
-### PGVector
 ### Ollama
+docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
+
 ### Open WebUi
+docker run -d -p 3003:8080 --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:main
+
+### PGVector
 ### LangChain
 
 
