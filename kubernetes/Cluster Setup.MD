@@ -100,9 +100,6 @@ systemctl stop docker
 systemctl disable docker
 
 
-
-
-
 # Create a cluster
 https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/
 
@@ -123,6 +120,9 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
 https://kubernetes.io/docs/concepts/cluster-administration/addons/
 
+Check for the latest version
+https://github.com/projectcalico/calico/tree/master/manifests
+
 kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.0/manifests/tigera-operator.yaml
 kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.0/manifests/custom-resources.yaml
 watch kubectl get pods -n calico-system
@@ -133,121 +133,26 @@ kubectl get nodes -o wide
 
 kubeadm join ... etc from the terminal
 
-
-# Rook-Ceph
-https://computingforgeeks.com/how-to-deploy-rook-ceph-storage-on-kubernetes-cluster/
-
-cd ~/
-git clone --single-branch --branch release-1.15 https://github.com/rook/rook.git
-cd rook/deploy/examples/
-kubectl create -f crds.yaml
-kubectl create -f common.yaml
-kubectl create -f operator.yaml
-watch kubectl -n rook-ceph get pod
-kubectl config set-context --current --namespace rook-ceph
-
-# Create Cluster
-kubectl create -f cluster.yaml
-watch kubectl get all -n rook-ceph
-kubectl get pods -n rook-ceph -w
-kubectl -n rook-ceph get cephcluster
-
-# Ceph Toolbox
-kubectl apply -f toolbox.yaml
-kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- bash
-ceph status
-ceph osd status
-ceph df
-rados df
-
-
-# NFS Storage
-vi filesystem.yaml
-kubectl create -f filesystem.yaml
-kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- bash
-ceph fs ls
-ceph osd lspools
-exit
-vi csi/cephfs/storageclass.yaml
-kubectl create -f csi/cephfs/storageclass.yaml
-kubectl get sc
-kubectl create -f csi/cephfs/pvc.yaml
-kubectl get pvc
-kubectl create -f csi/cephfs/pod.yaml
-kubectl get pods
-
-# Block Storage
-kubectl create -f csi/rbd/storageclass.yaml
-kubectl create -f csi/rbd/pvc.yaml
-kubectl get sc
-kubectl get pvc rbd-pvc
-
-
-kubectl get svc -n rook-ceph
-kubectl port-forward service/rook-ceph-mgr-dashboard 8443:8443 -n rook-ceph
-kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode && echo
-vi dashboard-external-https.yaml
-kubectl create -f dashboard-external-https.yaml
-kubectl -n rook-ceph get service rook-ceph-mgr-dashboard-external-https
-
-Access the site at:
-https://yourvmipaddress:30638<the port number your nodeport created>
-
-
-# Object Storage
-kubectl create -f object.yaml
-kubectl -n rook-ceph get pod -l app=rook-ceph-rgw
-
-kubectl create -f storageclass-bucket-delete.yaml
-kubectl create -f object-bucket-claim-delete.yaml
-kubectl create -f rgw-external.yaml
-kubectl create -f object-user.yaml
-
-kubectl -n rook-ceph get service rook-ceph-rgw-my-store rook-ceph-rgw-my-store-external
-
-kubectl -n rook-ceph get secret rook-ceph-object-user-my-store-my-user -o jsonpath='{.data.AccessKey}' | base64 --decode
-kubectl -n rook-ceph get secret rook-ceph-object-user-my-store-my-user -o jsonpath='{.data.SecretKey}' | base64 --decode
-
-# Enable the Object Gateway in Dashboard
-radosgw-admin user create --uid=dashboard --display-name=dashboard --system
-
-
-
-# Install Portainer
-
-kubectl create namespace portainer
-kubectl config set-context --current --namespace portainer
-kubectl patch storageclass portainer-local-storage -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
-
-kubectl get sc
-
+# Install Helm
 curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
 chmod 700 get_helm.sh
 sudo ./get_helm.sh
 
 helm version
 
-helm repo add portainer https://portainer.github.io/k8s/
 
-helm repo update
-
-helm install --create-namespace -n portainer portainer portainer/portainer \
-    --set service.type=LoadBalancer
-helm install --create-namespace -n portainer portainer portainer/portainer
-
-helm install --create-namespace -n portainer portainer portainer/portainer \
-  --set service.type=ClusterIP \
-  --set ingress.enabled=true \
-  --set ingress.annotations.'kubernetes\.io/ingress\.class'=nginx \
-  --set ingress.annotations."nginx\.ingress\.kubernetes\.io/backend-protocol"=HTTPS \
-  --set ingress.hosts[0].host=portainer.example.io \
-  --set ingress.hosts[0].paths[0].path="/"
-
-  kubectl get pods
-
+# Move to the README.MD in Rook-Ceph to setup Cluster Storage
 
 # Useful Kubernetes Commands
 kubectl get all -A
 kubectl get pods -A 
 kubectl get nodes -A 
 watch kubectl get pods -n <namespace>
+
+kubectl describe pods
+kubectl describe pod mysql-6cc489dcd5-5jc8t
+
+kubectl create namespace datacraftsman
+kubectl config set-context --current --namespace=datacraftsman
+
+kubectl create -f file.yaml

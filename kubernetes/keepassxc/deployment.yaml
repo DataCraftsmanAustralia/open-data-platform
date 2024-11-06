@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keepassxc
+  labels:
+    app: keepassxc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keepassxc
+  template:
+    metadata:
+      labels:
+        app: keepassxc
+    spec:
+      securityContext:
+        fsGroup: 167
+      containers:
+        - name: keepassxc
+          image: lscr.io/linuxserver/keepassxc:latest
+          securityContext:
+            runAsUser: 167
+            runAsGroup: 167
+            seccompProfile:
+              type: Unconfined
+          env:
+            - name: PUID
+              value: "167"
+            - name: PGID
+              value: "167"
+            - name: TZ
+              value: "Etc/UTC"
+          ports:
+            - containerPort: 3000
+              name: port-3000
+            - containerPort: 3001
+              name: port-3001
+          volumeMounts:
+            - mountPath: /config
+              name: keepassxc-data
+      volumes:
+        - name: keepassxc-data
+          persistentVolumeClaim:
+            claimName: keepassxc-pvc
