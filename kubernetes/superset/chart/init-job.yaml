@@ -1,0 +1,46 @@
+# Source: superset/templates/init-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: superset-init-db
+  namespace: datacraftsman
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  template:
+    metadata:
+      name: superset-init-db
+    spec:
+      securityContext:
+        runAsUser: 0
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - dockerize -wait "tcp://$DB_HOST:$DB_PORT" -timeout 120s
+        envFrom:
+        - secretRef:
+            name: 'superset-env'
+        image: 'apache/superset:dockerize'
+        imagePullPolicy: 'IfNotPresent'
+        name: wait-for-postgres
+      containers:
+      - name: superset-init-db
+        image: "apachesuperset.docker.scarf.sh/apache/superset:4.0.1"
+        envFrom:
+          - secretRef:
+              name: superset-env
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: superset-config
+            mountPath: "/app/pythonpath"
+            readOnly: true
+        command: ["/bin/sh","-c",". /app/pythonpath/superset_bootstrap.sh; . /app/pythonpath/superset_init.sh"]
+        resources:
+          {}
+      volumes:
+        - name: superset-config
+          secret:
+            secretName: superset-config
+      restartPolicy: Never

@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: superset-redis-master
+  namespace: "datacraftsman"
+  labels:
+    app.kubernetes.io/name: redis
+    helm.sh/chart: redis-17.9.4
+    app.kubernetes.io/instance: superset
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: master
+spec:
+  type: ClusterIP
+  internalTrafficPolicy: Cluster
+  sessionAffinity: None
+  ports:
+    - name: tcp-redis
+      port: 6379
+      targetPort: redis
+      nodePort: null
+  selector:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: superset
+    app.kubernetes.io/component: master

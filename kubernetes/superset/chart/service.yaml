@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: superset
+  namespace: datacraftsman
+  labels:
+    app: superset
+    chart: superset-0.12.11
+    release: superset
+    heritage: Helm
+spec:
+  type: NodePort
+  ports:
+  - port: 8088
+    targetPort: 8088
+    nodePort: 31251
+  selector:
+    app: superset
+    release: superset

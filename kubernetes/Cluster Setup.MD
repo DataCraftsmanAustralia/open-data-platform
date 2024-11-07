@@ -156,3 +156,6 @@ kubectl create namespace datacraftsman
 kubectl config set-context --current --namespace=datacraftsman
 
 kubectl create -f file.yaml
+
+helm install --values values.yaml name name/name
+helm install <ChartName> --dry-run --debug
