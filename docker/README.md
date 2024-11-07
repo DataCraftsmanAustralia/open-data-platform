@@ -1,13 +1,8 @@
-# Open Data Platform
-
-This Repo is a guide to setting up a Data Platform in Ubuntu using Open Source Software in Docker.
-
-![Open Data Platform ](https://github.com/DataCraftsmanAU/moderndatastack/blob/main/Open%20Data%20Platform.png)
-
+# Open Data Platform - Docker Modern Data stack
 ## Out of Scope - TLS/HTTPS
 Setting up using TLS and certificates adds a massive complexity to the install however it is possible. Generally you need to get some certificates made up for your server, put them someone safe in your home drive, then mount them to various locations on each application using -v /directory:/app/cert/dir and usually an -e TLSOPTION=true type environment variable. Also included a prepare_certs.py, this enables the requests package in python to use your custom certificates. Just run it in the custom dockerfiles you make with the certs.
 
-## Docker Modern Data stack
+
 ## Data Platform
 Most of the content below are direct commands to run in the linux terminal. Just check each one before you run them in case there are passwords to enter or something. Also where ever you see `localhost`, usually I mean to use your VMs address. E.G. `192.168.1.X` or `yourvmdomain.com`
 

@@ -7,6 +7,10 @@ cd ~/
 git clone --single-branch --branch release-1.15 https://github.com/rook/rook.git
 cd rook/deploy/examples/
 
+Go into the operator.yaml file and make sure the following is set to true, by default it is false:
+- name: ROOK_HOSTPATH_REQUIRES_PRIVILEGED
+    value: "true"
+
 kubectl create -f crds.yaml
 kubectl create -f common.yaml
 kubectl create -f operator.yaml

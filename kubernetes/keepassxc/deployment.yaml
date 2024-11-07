@@ -14,21 +14,19 @@ spec:
       labels:
         app: keepassxc
     spec:
-      securityContext:
-        fsGroup: 167
       containers:
         - name: keepassxc
           image: lscr.io/linuxserver/keepassxc:latest
           securityContext:
-            runAsUser: 167
-            runAsGroup: 167
+            runAsUser: 0
+            runAsGroup: 0
             seccompProfile:
               type: Unconfined
           env:
             - name: PUID
-              value: "167"
+              value: "0"
             - name: PGID
-              value: "167"
+              value: "0"
             - name: TZ
               value: "Etc/UTC"
           ports:
