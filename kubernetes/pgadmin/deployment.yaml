@@ -15,6 +15,9 @@ spec:
       containers:
       - name: pgadmin
         image: dpage/pgadmin4:8.12.0
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
         ports:
         - containerPort: 80
         env:
@@ -31,7 +34,7 @@ spec:
         - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
           value: "True"
         - name: PGADMIN_CONFIG_LOGIN_BANNER
-          value: "Authorised users only!"
+          value: "'Authorised users only!'"
         - name: PGADMIN_CONFIG_CONSOLE_LOG_LEVEL
           value: "10"
         volumeMounts:
