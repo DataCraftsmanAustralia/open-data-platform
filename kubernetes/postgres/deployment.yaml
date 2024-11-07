@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-warehouse
+spec:
+  serviceName: postgres-warehouse
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-warehouse
+  template:
+    metadata:
+      labels:
+        app: postgres-warehouse
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16.4
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-warehouse-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-warehouse-secret
+              key: POSTGRES_PASSWORD
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: rook-ceph-block
+      resources:
+        requests:
+          storage: 10Gi
