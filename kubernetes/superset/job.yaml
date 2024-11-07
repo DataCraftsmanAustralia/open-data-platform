@@ -31,7 +31,6 @@ spec:
             --email $(ADMIN_EMAIL) \
             --password $(ADMIN_PASSWORD) && \
           superset db upgrade && \
-          superset load_examples && \
           superset init
         envFrom:
         - secretRef:

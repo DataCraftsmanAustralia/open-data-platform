@@ -11,4 +11,6 @@ kubectl apply -f service.yaml
 kubectl apply -f secret.yaml
 kubectl apply -f pvc.yaml
 kubectl apply -f deployment.yaml
+
+## Wait for deployment to finish then:
 kubectl apply -f job.yaml

@@ -22,13 +22,15 @@ spec:
           runAsUser: 0
           runAsGroup: 0
         ports:
-        - containerPort: 8088
+        - name: http
+          containerPort: 8088
+          protocol: TCP
         env:
-        - name: SUPERSET_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: superset-secret
-              key: SUPERSET_SECRET_KEY
+        - name: "SUPERSET_PORT"
+          value: "8088"
+        envFrom:
+        - secretRef:
+            name: superset-secret
         volumeMounts:
         - name: superset-storage
           mountPath: /app/superset_home
