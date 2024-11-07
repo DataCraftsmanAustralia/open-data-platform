@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: superset
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: superset
+  template:
+    metadata:
+      labels:
+        app: superset
+    spec:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+      containers:
+      - name: superset
+        image: apache/superset
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        ports:
+        - containerPort: 8088
+        env:
+        - name: SUPERSET_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: superset-secret
+              key: SUPERSET_SECRET_KEY
+        volumeMounts:
+        - name: superset-storage
+          mountPath: /app/superset_home
+      volumes:
+      - name: superset-storage
+        persistentVolumeClaim:
+          claimName: superset-pvc
