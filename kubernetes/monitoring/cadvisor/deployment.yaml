@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cadvisor
+spec:
+  selector:
+    matchLabels:
+      app: cadvisor
+  template:
+    metadata:
+      labels:
+        app: cadvisor
+    spec:
+      hostNetwork: true
+      containers:
+      - name: cadvisor
+        image: gcr.io/cadvisor/cadvisor:v0.50.0
+        args:
+          - "-port=8098"
+        ports:
+        - containerPort: 8098
+        volumeMounts:
+        - mountPath: "/rootfs"
+          name: rootfs
+          readOnly: true
+        - mountPath: "/var/run"
+          name: var-run
+          readOnly: true
+        - mountPath: "/sys"
+          name: sys
+          readOnly: true
+        - mountPath: "/var/lib/docker/"
+          name: var-lib-docker
+          readOnly: true
+        - mountPath: "/dev/disk/"
+          name: dev-disk
+          readOnly: true
+      volumes:
+      - name: rootfs
+        hostPath:
+          path: "/"
+      - name: var-run
+        hostPath:
+          path: "/var/run"
+      - name: sys
+        hostPath:
+          path: "/sys"
+      - name: var-lib-docker
+        hostPath:
+          path: "/var/lib/docker"
+      - name: dev-disk
+        hostPath:
+          path: "/dev/disk"

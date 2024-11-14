@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:main
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        command:
+          - "/bin/prometheus"
+          - "--config.file=/etc/prometheus/prometheus.yaml"
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - mountPath: /etc/prometheus/prometheus.yaml
+          subPath: prometheus.yaml
+          name: config-volume
+        - mountPath: /prometheus
+          name: prometheus-data
+      volumes:
+      - name: config-volume
+        configMap:
+          name: prometheus-config
+      - name: prometheus-data
+        persistentVolumeClaim:
+          claimName: prometheus-pvc
