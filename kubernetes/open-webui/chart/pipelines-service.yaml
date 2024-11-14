@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: open-webui-pipelines
+  labels:
+    helm.sh/chart: pipelines-0.0.4
+    app.kubernetes.io/version: "alpha"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: open-webui
+    app.kubernetes.io/component: open-webui-pipelines
+spec:
+  selector:
+    app.kubernetes.io/instance: open-webui
+    app.kubernetes.io/component: open-webui-pipelines
+  type: ClusterIP
+  ports:
+  - protocol: TCP
+    name: http
+    port: 9099
+    targetPort: http

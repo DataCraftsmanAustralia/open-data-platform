@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: open-webui
+  labels:
+    helm.sh/chart: open-webui-3.6.0
+    app.kubernetes.io/version: "0.3.35"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: open-webui
+    app.kubernetes.io/component: open-webui
+spec:
+  replicas: 1
+  serviceName: open-webui
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: open-webui
+      app.kubernetes.io/component: open-webui
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: open-webui-3.6.0
+        app.kubernetes.io/version: "0.3.35"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/instance: open-webui
+        app.kubernetes.io/component: open-webui
+    spec:
+      initContainers:
+      - name: copy-app-data
+        image: ghcr.io/open-webui/open-webui:0.3.35
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c', 'cp -R -n /app/backend/data/* /tmp/app-data/']
+        volumeMounts:
+        - name: data
+          mountPath: /tmp/app-data
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      containers:
+      - name: open-webui
+        image: ghcr.io/open-webui/open-webui:0.3.35
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8080
+        volumeMounts:
+        - name: data
+          mountPath: /app/backend/data
+        env:
+        - name: "OLLAMA_BASE_URLS"
+          value: "http://open-webui-ollama.datacraftsman.svc.cluster.local:11434"
+        - name: "OPENAI_API_BASE_URL"
+          value: http://open-webui-pipelines.datacraftsman.svc.cluster.local:9099
+        - name: OPENAI_API_KEY
+          value: 0p3n-w3bu!
+        - name: OLLAMA_DEBUG
+          value: "1"
+        tty: true
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: open-webui

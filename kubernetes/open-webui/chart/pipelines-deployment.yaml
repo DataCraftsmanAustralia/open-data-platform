@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-webui-pipelines
+  labels:
+    helm.sh/chart: pipelines-0.0.4
+    app.kubernetes.io/version: "alpha"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: open-webui
+    app.kubernetes.io/component: open-webui-pipelines
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: open-webui
+      app.kubernetes.io/component: open-webui-pipelines
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: pipelines-0.0.4
+        app.kubernetes.io/version: "alpha"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/instance: open-webui
+        app.kubernetes.io/component: open-webui-pipelines
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      containers:
+      - name: pipelines
+        image: ghcr.io/open-webui/pipelines:main
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 9099
+        volumeMounts:
+        - name: data
+          mountPath: /app/backend/data
+        env:
+        tty: true
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: open-webui-pipelines
