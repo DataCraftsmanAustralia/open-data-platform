@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mlflow-db
+spec:
+  serviceName: mlflow-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow-db
+  template:
+    metadata:
+      labels:
+        app: mlflow-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16.4
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: mlflowdb
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-db-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mlflow-db-secret
+              key: POSTGRES_PASSWORD
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: mlflow-data
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: mlflow-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: rook-ceph-block
+      resources:
+        requests:
+          storage: 10Gi
