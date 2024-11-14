@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      containers:
+      - name: mlflow
+        image: ghcr.io/mlflow/mlflow
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            pip install psycopg2-binary boto3 &&
+            mlflow server --host 0.0.0.0 --port 5000 \
+              --backend-store-uri postgresql://<admin>:<password>@localhost:31350/mlflowdb \
+              --artifacts-destination s3://mlartifacts
+        env:
+          - name: MLFLOW_S3_ENDPOINT_URL
+            value: "http://localhost:31718"
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: mlflow-secrets
+                key: AWS_ACCESS_KEY_ID
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: mlflow-secrets
+                key: AWS_SECRET_ACCESS_KEY
+        ports:
+        - containerPort: 5000

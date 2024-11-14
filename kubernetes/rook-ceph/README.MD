@@ -56,6 +56,8 @@ kubectl get pvc rbd-pvc
 
 kubectl get svc -n rook-ceph
 kubectl port-forward service/rook-ceph-mgr-dashboard 8443:8443 -n rook-ceph
+
+# Get password - user is admin by default
 kubectl -n rook-ceph get secret rook-ceph-dashboard-password -o jsonpath="{['data']['password']}" | base64 --decode && echo
 vi dashboard-external-https.yaml
 kubectl create -f dashboard-external-https.yaml
