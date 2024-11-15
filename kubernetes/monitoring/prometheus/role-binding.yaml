@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: prometheus-role-binding
+  namespace: datacraftsman
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: datacraftsman
+roleRef:
+  kind: Role
+  name: prometheus-role
+  apiGroup: rbac.authorization.k8s.io

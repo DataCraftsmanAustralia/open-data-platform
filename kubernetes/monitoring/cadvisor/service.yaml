@@ -1,7 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: cadvisor-service
+  name: cadvisor
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8098'
 spec:
   type: NodePort
   ports:

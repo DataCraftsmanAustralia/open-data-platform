@@ -162,6 +162,16 @@ helm install <ChartName> --dry-run --debug
 
 kubectl exec -it deploy/ollama -- bash
 
+
+# Patch a deployment
+kubectl patch deployment prometheus -p '{"spec":{"template":{"spec":{"serviceAccountName":"prometheus"}}}}'
+
+# Restart a pod
+kubectl rollout restart deployment prometheus
+
+## Add a new node
+kubeadm token create --print-join-command
+
 # Check for internet access DNS
 kubectl run dns-test --image=busybox:1.28 --rm -it -- nslookup kubernetes.default <!-- General -->
 kubectl run dns-test --image=busybox:1.28 --rm -it -- nslookup registry.ollama.ai <!-- website -->
