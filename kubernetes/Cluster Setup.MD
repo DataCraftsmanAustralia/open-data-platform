@@ -1,3 +1,9 @@
+# Picking a VM
+In general you should start with 2 vCPUs and 8GB memory per VM at the start while building the platform. Scale up to 4-8 vCPU with 16-32 GB of memory as a minimum production ready load.
+You must use SSDs. 
+
+If you are doing a small cluster or just learning, 3 nodes is sufficient. If you want to do a High Availability Cluster, you want at least 3 master nodes and 3 worker nodes, ensuring to keep the numbers odd so that a quorum can always be maintained.
+
 # Install Kubectl on one machine
 https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/
 
