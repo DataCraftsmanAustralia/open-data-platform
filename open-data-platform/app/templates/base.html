@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='/css/style.css') }}">
+    <title>Data Craftsman | {{ title }}</title>
+</head>
+<body>
+    <div class="header">
+        <a href="/">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
+        </a>
+        <h1>{{ title }}</h1>
+    </div>
+    {% block content %}{% endblock %}
+    <footer>
+    <div class="copywrite">© 2024 Data Craftsman. All Rights Reserved.</div>
+    </footer>
+</body>
+</html>
