@@ -1,6 +1,3 @@
-Here's a detailed example of a **JSON Schema** that you can adapt to your needs. It is structured to cover various aspects like file types, formats, transformations, and database behaviors:
-
-```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Data Pipeline Schema",
