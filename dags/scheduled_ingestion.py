@@ -13,12 +13,20 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
+def get_storage_config():
+    """Get storage configuration from environment"""
+    return {
+        'type': os.getenv('STORAGE_TYPE', 'minio'),
+        'endpoint_url': os.getenv('STORAGE_ENDPOINT'),
+        'access_key': os.getenv('STORAGE_ACCESS_KEY'),
+        'secret_key': os.getenv('STORAGE_SECRET_KEY')
+    }
+
 def get_scheduled_configs(ds, **kwargs):
     """Get configurations that need to be processed based on schedule"""
     processor = DataProcessor(
         db_connection_string=os.getenv('POSTGRES_CONNECTION'),
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+        storage_config=get_storage_config()
     )
     try:
         return processor.get_scheduled_configs()
@@ -29,8 +37,7 @@ def process_config(config, **kwargs):
     """Process a single configuration"""
     processor = DataProcessor(
         db_connection_string=os.getenv('POSTGRES_CONNECTION'),
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+        storage_config=get_storage_config()
     )
     try:
         processor.process(config)
