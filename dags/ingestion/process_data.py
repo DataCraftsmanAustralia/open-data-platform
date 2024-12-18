@@ -4,19 +4,30 @@ from .process_data.schema import SchemaHandler
 from .process_data.database import DatabaseHandler
 from .process_data.reader import DataReader
 from .process_data.writer import DataWriter
+from .process_data.connections import ConnectionManager
+from airflow.models import Variable
 
 class DataProcessor:
-    def __init__(self, db_connection_string: str, storage_config: Dict[str, Any]):
+    def __init__(self, db_conn_id: str = 'postgres_default', storage_conn_id: str = 'storage_default'):
         """
-        Initialize processor with database connection and storage configuration
+        Initialize processor with connection IDs
         
-        storage_config should contain:
-        - type: 's3', 'minio', or 'ceph'
-        - endpoint_url: for minio/ceph
-        - access_key: storage access key
-        - secret_key: storage secret key
+        Args:
+            db_conn_id: Airflow connection ID for database
+            storage_conn_id: Airflow connection ID for storage
         """
-        self.db_handler = DatabaseHandler(db_connection_string)
+        # Get database configuration
+        db_type = Variable.get('database_type', default_var='postgres')
+        db_details = (ConnectionManager.get_postgres_connection(db_conn_id) 
+                     if db_type == 'postgres' 
+                     else ConnectionManager.get_oracle_connection(db_conn_id))
+        db_conn_string = ConnectionManager.build_connection_string(db_type, db_details)
+        
+        # Get storage configuration
+        storage_config = ConnectionManager.get_storage_connection(storage_conn_id)
+        
+        # Initialize handlers
+        self.db_handler = DatabaseHandler(db_conn_string)
         self.storage_handler = create_storage_handler(**storage_config)
         self.schema_handler = SchemaHandler(self.db_handler.create_metadata_engine())
         

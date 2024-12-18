@@ -2,7 +2,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 from ingestion.process_data import DataProcessor
-import os
+from airflow.models import Variable
 
 default_args = {
     'owner': 'airflow',
@@ -16,11 +16,13 @@ default_args = {
 def process_triggered_data(config, **kwargs):
     """Process data based on triggered configuration"""
     processor = DataProcessor(
-        db_connection_string=os.getenv('POSTGRES_CONNECTION'),
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+        db_conn_id=Variable.get('database_connection_id', 'postgres_default'),
+        storage_conn_id=Variable.get('storage_connection_id', 'storage_default')
     )
-    processor.process(config)
+    try:
+        processor.process(config)
+    finally:
+        processor.dispose()
 
 with DAG(
     'triggered_ingestion',

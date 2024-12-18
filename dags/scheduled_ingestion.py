@@ -2,7 +2,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
 from ingestion.process_data import DataProcessor
-import os
+from airflow.models import Variable
 
 default_args = {
     'owner': 'airflow',
@@ -13,20 +13,11 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-def get_storage_config():
-    """Get storage configuration from environment"""
-    return {
-        'type': os.getenv('STORAGE_TYPE', 'minio'),
-        'endpoint_url': os.getenv('STORAGE_ENDPOINT'),
-        'access_key': os.getenv('STORAGE_ACCESS_KEY'),
-        'secret_key': os.getenv('STORAGE_SECRET_KEY')
-    }
-
 def get_scheduled_configs(ds, **kwargs):
     """Get configurations that need to be processed based on schedule"""
     processor = DataProcessor(
-        db_connection_string=os.getenv('POSTGRES_CONNECTION'),
-        storage_config=get_storage_config()
+        db_conn_id=Variable.get('database_connection_id', 'postgres_default'),
+        storage_conn_id=Variable.get('storage_connection_id', 'storage_default')
     )
     try:
         return processor.get_scheduled_configs()
@@ -36,8 +27,8 @@ def get_scheduled_configs(ds, **kwargs):
 def process_config(config, **kwargs):
     """Process a single configuration"""
     processor = DataProcessor(
-        db_connection_string=os.getenv('POSTGRES_CONNECTION'),
-        storage_config=get_storage_config()
+        db_conn_id=Variable.get('database_connection_id', 'postgres_default'),
+        storage_conn_id=Variable.get('storage_connection_id', 'storage_default')
     )
     try:
         processor.process(config)
