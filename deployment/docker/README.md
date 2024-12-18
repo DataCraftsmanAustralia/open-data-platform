@@ -118,13 +118,22 @@ cd airflow
 curl -LfO 'https://airflow.apache.org/docs/apache-airflow/2.10.2/docker-compose.yaml'
 mkdir -p ./dags ./logs ./plugins ./config 
 ```
+
+Build and push the custom image using the Dockerfile and requirements.txt:
+```
+docker build -t localhost:5000/custom/airflow:2.7.1 .
+docker push localhost:5000/custom/airflow:2.7.1
+```
+
 #### Create .env file and add environment variables
 ```
 vi .env
 AIRFLOW_UID=50000
 _AIRFLOW_WWW_USER_USERNAME=<USERNAME>
 _AIRFLOW_WWW_USER_PASSWORD=<PASSWORD>
+AIRFLOW_IMAGE_NAME=localhost:5000/custom/airflow:2.7.1
 ```
+
 Press i to type in the VI editor. This is called Insert Mode.
 Press Escape then :wq to save an exit VI. :)
 
