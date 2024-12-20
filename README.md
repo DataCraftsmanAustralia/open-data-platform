@@ -10,5 +10,5 @@ TLS is out of scope. Use nginx or mount certs to your deployment, or use a cloud
 
 # Roadmap
 
-- [in progress] Apache airflow data pipeline.
+- [x] In-progress - Apache airflow data pipeline.
 - [ ] Develop Flask front end integration platform.
