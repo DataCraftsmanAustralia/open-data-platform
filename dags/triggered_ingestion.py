@@ -1,42 +1,73 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from datetime import datetime, timedelta
-from ingestion.process_data import DataProcessor
-from airflow.models import Variable
+from airflow.utils.dates import days_ago
+from dags.process_data.pipeline import (
+    load_config,
+    run_dlt_pipeline
+)
+from dags.process_data.source import (
+    get_dlt_source,
+    apply_column_transformations
+)
 
+from dags.process_data.destination import (
+    get_dlt_destination
+)
+
+# Define default arguments for the DAG
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'email_on_failure': True,
+    'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    'retries': 0,
 }
 
-def process_triggered_data(config, **kwargs):
-    """Process data based on triggered configuration"""
-    processor = DataProcessor(
-        db_conn_id=Variable.get('database_connection_id', 'postgres_default'),
-        storage_conn_id=Variable.get('storage_connection_id', 'storage_default')
-    )
-    try:
-        processor.process(config)
-    finally:
-        processor.dispose()
-
+# Define the DAG
 with DAG(
-    'triggered_ingestion',
+    dag_id='triggered_data_pipeline',
     default_args=default_args,
-    description='DAG for triggered data ingestion',
-    schedule_interval=None,  # Triggered manually
-    start_date=datetime(2023, 1, 1),
+    description='A manually triggered data pipeline using dlt',
+    schedule_interval=None,  # This DAG is triggered manually
+    start_date=days_ago(2),
     catchup=False,
+    tags=['dlt', 'data-pipeline', 'triggered'],
 ) as dag:
-    
-    process_data = PythonOperator(
-        task_id='process_data',
-        python_callable=process_triggered_data,
-        provide_context=True,
-        # Config will be provided when triggering the DAG
-        op_kwargs={'config': "{{ dag_run.conf }}"}
-    ) 
+    # Tasks
+    load_config_task = PythonOperator(
+        task_id='load_config',
+        python_callable=load_config,
+    )
+
+    create_dlt_source_task = PythonOperator(
+        task_id='create_dlt_source',
+        python_callable=get_dlt_source,
+        op_kwargs={'config': '{{ ti.xcom_pull(task_ids="load_config") }}'},
+    )
+
+    create_dlt_destination_task = PythonOperator(
+        task_id='create_dlt_destination',
+        python_callable=get_dlt_destination,
+        op_kwargs={'config': '{{ ti.xcom_pull(task_ids="load_config") }}'},
+    )
+
+    transform_resource_task = PythonOperator(
+        task_id='transform_resource',
+        python_callable=apply_column_transformations,
+        op_kwargs={
+            'resource': '{{ ti.xcom_pull(task_ids="create_dlt_source") }}',
+            'config': '{{ ti.xcom_pull(task_ids="load_config") }}',
+        },
+    )
+
+    run_pipeline_task = PythonOperator(
+        task_id='run_dlt_pipeline',
+        python_callable=run_dlt_pipeline,
+        op_kwargs={
+            'source': '{{ ti.xcom_pull(task_ids="transform_resource") }}',
+            'destination': '{{ ti.xcom_pull(task_ids="create_dlt_destination") }}',
+            'config': '{{ ti.xcom_pull(task_ids="load_config") }}',
+        },
+    )
+
+    load_config_task >> create_dlt_source_task >> create_dlt_destination_task >> transform_resource_task >> run_pipeline_task

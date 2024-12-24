@@ -3,3 +3,6 @@ Flask
 Flask-SQLAlchemy
 Flask-WTF
 python-dotenv
+dlt
+apache-airflow
+apache-airflow[s3]

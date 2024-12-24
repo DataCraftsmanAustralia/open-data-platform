@@ -1,62 +1,75 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from datetime import datetime, timedelta
-from ingestion.process_data import DataProcessor
-from airflow.models import Variable
+from airflow.utils.dates import days_ago
+from datetime import timedelta
+from dags.process_data.pipeline import (
+    load_config,
+    run_dlt_pipeline
+)
+from dags.process_data.source import (
+    get_dlt_source,
+    apply_column_transformations
+)
 
+from dags.process_data.destination import (
+    get_dlt_destination
+)
+
+# Define default arguments for the DAG
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'email_on_failure': True,
+    'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
 
-def get_scheduled_configs(ds, **kwargs):
-    """Get configurations that need to be processed based on schedule"""
-    processor = DataProcessor(
-        db_conn_id=Variable.get('database_connection_id', 'postgres_default'),
-        storage_conn_id=Variable.get('storage_connection_id', 'storage_default')
-    )
-    try:
-        return processor.get_scheduled_configs()
-    finally:
-        processor.dispose()
-
-def process_config(config, **kwargs):
-    """Process a single configuration"""
-    processor = DataProcessor(
-        db_conn_id=Variable.get('database_connection_id', 'postgres_default'),
-        storage_conn_id=Variable.get('storage_connection_id', 'storage_default')
-    )
-    try:
-        processor.process(config)
-    finally:
-        processor.dispose()
-
+# Define the DAG
 with DAG(
-    'scheduled_ingestion',
+    dag_id='scheduled_data_pipeline',
     default_args=default_args,
-    description='DAG for scheduled data ingestion',
-    schedule_interval='*/15 * * * *',  # Every 15 minutes
-    start_date=datetime(2023, 1, 1),
-    catchup=False,
+    description='A scheduled data pipeline using dlt',
+    schedule_interval=timedelta(days=1),  # Run daily, adjust as needed
+    start_date=days_ago(2),
+    catchup=False,  # Set to True if you want to backfill
+    tags=['dlt', 'data-pipeline', 'scheduled'],
 ) as dag:
-    
-    get_configs = PythonOperator(
-        task_id='get_configs',
-        python_callable=get_scheduled_configs,
-        provide_context=True,
+    # Tasks
+    load_config_task = PythonOperator(
+        task_id='load_config',
+        python_callable=load_config,
     )
-    
-    def create_process_task(config):
-        return PythonOperator(
-            task_id=f'process_{config["config_id"]}',
-            python_callable=process_config,
-            op_kwargs={'config': config},
-            provide_context=True,
-        )
-    
-    # Dynamic task creation based on configs
-    get_configs >> [create_process_task(config) for config in get_scheduled_configs(None)]
+
+    create_dlt_source_task = PythonOperator(
+        task_id='create_dlt_source',
+        python_callable=get_dlt_source,
+        op_kwargs={'config': '{{ ti.xcom_pull(task_ids="load_config") }}'},
+    )
+
+    create_dlt_destination_task = PythonOperator(
+        task_id='create_dlt_destination',
+        python_callable=get_dlt_destination,
+        op_kwargs={'config': '{{ ti.xcom_pull(task_ids="load_config") }}'},
+    )
+
+    transform_resource_task = PythonOperator(
+        task_id='transform_resource',
+        python_callable=apply_column_transformations,
+        op_kwargs={
+            'resource': '{{ ti.xcom_pull(task_ids="create_dlt_source") }}',
+            'config': '{{ ti.xcom_pull(task_ids="load_config") }}',
+        },
+    )
+
+    run_pipeline_task = PythonOperator(
+        task_id='run_dlt_pipeline',
+        python_callable=run_dlt_pipeline,
+        op_kwargs={
+            'source': '{{ ti.xcom_pull(task_ids="transform_resource") }}',
+            'destination': '{{ ti.xcom_pull(task_ids="create_dlt_destination") }}',
+            'config': '{{ ti.xcom_pull(task_ids="load_config") }}',
+        },
+    )
+
+    load_config_task >> create_dlt_source_task >> create_dlt_destination_task >> transform_resource_task >> run_pipeline_task
