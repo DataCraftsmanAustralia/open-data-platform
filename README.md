@@ -1,10 +1,9 @@
 # Open Data Platform
 
 This Repo is a guide to building the Open Data Platform in Ubuntu using Open Source Software in both Docker and Kubernetes.
+TLS is out of scope. Use nginx or mount certs to your deployment, or use a cloud load balancer or whatever suits your needs. Will add it one day.
 
 ![Open Data Platform ](https://github.com/DataCraftsmanAustralia/open-data-platform/blob/main/images/opendataplatform.png)
-
-TLS is out of scope. Use nginx or mount certs to your deployment, or use a cloud load balancer or whatever suits your needs. Will add it one day.
 
 # Data Analytics Use Case Flow Chart
 ![Data Analytics Use Case Flow Chart ](https://github.com/DataCraftsmanAustralia/open-data-platform/blob/main/images/usecaseflowdiagram.png)
@@ -16,7 +15,7 @@ TLS is out of scope. Use nginx or mount certs to your deployment, or use a cloud
 ![Big Data Architecture ](https://github.com/DataCraftsmanAustralia/open-data-platform/blob/main/images/bigdataarchitecture.png)
 
 # System Architecture (WIP)
-![System Architecture (WIP) ](https://github.com/DataCraftsmanAustralia/open-data-platform/blob/main/images/systemarchitecture.png)
+![System Architecture WIP ](https://github.com/DataCraftsmanAustralia/open-data-platform/blob/main/images/systemarchitecture.png)
 
 # dbt CI/CD Pipeline
 ![dbt CI/CD Pipeline ](https://github.com/DataCraftsmanAustralia/open-data-platform/blob/main/images/dbt-cicd.png)
